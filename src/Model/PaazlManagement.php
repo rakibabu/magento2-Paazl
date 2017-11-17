@@ -411,7 +411,7 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
                 ? $extensionAttributes
                 : $this->addressExtensionFactory->create();
 
-            if (!is_null($extensionAttributes)) {
+            if (!is_null($extensionAttributes) && ! empty($extensionAttributes)) {
                 $streetName = $extensionAttributes->getStreetName();
                 $houseNumber = $extensionAttributes->getHouseNumber();
                 $addition = $extensionAttributes->getHouseNumberAddition();
