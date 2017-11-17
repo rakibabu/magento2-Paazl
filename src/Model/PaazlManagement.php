@@ -411,10 +411,19 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
                 ? $extensionAttributes
                 : $this->addressExtensionFactory->create();
 
-            if (!is_null($extensionAttributes) && ! empty($extensionAttributes)) {
-                $streetName = $extensionAttributes->getStreetName();
-                $houseNumber = $extensionAttributes->getHouseNumber();
-                $addition = $extensionAttributes->getHouseNumberAddition();
+            if ( ! is_null($extensionAttributes) && ! empty($extensionAttributes)) {
+                if (is_array($extensionAttributes)){
+                    $streetName = $extensionAttributes['street_name'];
+                    $houseNumber = $extensionAttributes['house_number'];
+
+                    if (array_key_exists('house_number_addition', $extensionAttributes)) {
+                        $addition = $extensionAttributes['house_number_addition'];
+                    }
+                } else {
+                    $streetName = $extensionAttributes->getStreetName();
+                    $houseNumber = $extensionAttributes->getHouseNumber();
+                    $addition = $extensionAttributes->getHouseNumberAddition();
+                }
             }
             // Try to get information from address?
             if ($houseNumber == '') {
