@@ -445,7 +445,7 @@ class Carrier extends AbstractCarrierOnline implements \Magento\Shipping\Model\C
 
             if ($freeShippingThreshold > 0) {
                 if ($this->_request->getPackageValueWithDiscount() > $freeShippingThreshold) {
-                    if (in_array($method, $this->getCode('free_shipping_allowed_methods'))) {
+                    if (is_array($this->getCode('free_shipping_allowed_methods')) && in_array($method, $this->getCode('free_shipping_allowed_methods'))) {
                         $methodPrice = 0;
                     }
                 }
