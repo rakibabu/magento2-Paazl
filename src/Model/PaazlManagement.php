@@ -411,62 +411,45 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
                 ? $extensionAttributes
                 : $this->addressExtensionFactory->create();
 
-            if ( ! is_null($extensionAttributes) && ! empty($extensionAttributes)) {
-                if (is_array($extensionAttributes)){
-                    $streetName = $extensionAttributes['street_name'];
-                    $houseNumber = $extensionAttributes['house_number'];
-
-                    if (array_key_exists('house_number_addition', $extensionAttributes)) {
-                        $addition = $extensionAttributes['house_number_addition'];
-                    }
-                } else {
-                    $streetName = $extensionAttributes->getStreetName();
-                    $houseNumber = $extensionAttributes->getHouseNumber();
-                    $addition = $extensionAttributes->getHouseNumberAddition();
-                }
+            if ($address->getHouseNumber() != '') {
+                $streetName = $address->getStreetName();
+                $houseNumber = $address->getHouseNumber();
+                $addition = $address->getHouseNumberAddition();
             }
-            // Try to get information from address?
-            if ($houseNumber == '') {
-                if ($address->getHouseNumber() != '') {
-                    $streetName = $address->getStreetName();
-                    $houseNumber = $address->getHouseNumber();
-                    $addition = $address->getHouseNumberAddition();
+            else {
+                $streetName = $address->getStreetLine(1);
+                $houseNumber = $address->getStreetLine(2);
+                if ($houseNumber) {
+                    $addition = $address->getStreetLine(3);
+
+                    $addressExtension->setStreetName($streetName);
+                    $addressExtension->setHouseNumber($houseNumber);
+                    $addressExtension->setHouseNumberAddition($addition);
+                    //$address->setExtensionAttributes($addressExtension);
                 }
                 else {
-                    $streetName = $address->getStreetLine(1);
-                    $houseNumber = $address->getStreetLine(2);
-                    if ($houseNumber) {
-                        $addition = $address->getStreetLine(3);
+                    // Get street, house number, etc from line 1
+                    $parts = $this->_addressHelper->getStreetParts($address->getStreet());
 
-                        $addressExtension->setStreetName($streetName);
-                        $addressExtension->setHouseNumber($houseNumber);
-                        $addressExtension->setHouseNumberAddition($addition);
-                        //$address->setExtensionAttributes($addressExtension);
-                    }
-                    else {
-                        // Get street, house number, etc from line 1
-                        $parts = $this->_addressHelper->getStreetParts($address->getStreet());
+                    $street = $parts['street'];
+                    $houseNumber = $parts['house_number'];
+                    $addition = $parts['addition'];
 
-                        $street = $parts['street'];
-                        $houseNumber = $parts['house_number'];
-                        $addition = $parts['addition'];
+                    $addressExtension->setStreetName($street);
+                    $addressExtension->setHouseNumber($houseNumber);
+                    $addressExtension->setHouseNumberAddition($addition);
 
-                        $addressExtension->setStreetName($street);
-                        $addressExtension->setHouseNumber($houseNumber);
-                        $addressExtension->setHouseNumberAddition($addition);
-
-                        // Fixup region
-                        if ($address->getRegion() != '' && !is_string($address->getRegion())) {
-                            $address->setRegion($address->getRegion()->getRegionId());
-                        }
-
-                        // @todo Should we fixup wrong format of street?
-                        //$address->setStreet(implode("\n", array_filter($parts)));
-                        //$address->setExtensionAttributes($addressExtension);
+                    // Fixup region
+                    if ($address->getRegion() != '' && !is_string($address->getRegion())) {
+                        $address->setRegion($address->getRegion()->getRegionId());
                     }
 
-                    $address->save();
+                    // @todo Should we fixup wrong format of street?
+                    //$address->setStreet(implode("\n", array_filter($parts)));
+                    //$address->setExtensionAttributes($addressExtension);
                 }
+
+                $address->save();
             }
             break;
         }
