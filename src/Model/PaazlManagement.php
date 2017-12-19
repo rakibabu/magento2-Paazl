@@ -402,7 +402,7 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
         $addressFields = [];
 
         if ( ! is_null($extensionAttributes) && ! empty($extensionAttributes)) {
-            if (is_array($extensionAttributes)){
+            if (is_array($extensionAttributes) && ! empty(array_filter($extensionAttributes))){
                 $addressFields['streetName'] = $extensionAttributes['street_name'];
                 $addressFields['houseNumber'] = $extensionAttributes['house_number'];
 
@@ -422,6 +422,7 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
     protected function _getAddressFromAddresObject($address, $addressExtension)
     {
         $addressFields = [];
+        $addressFactory = $this->addressExtensionFactory->create();
 
         // Try to get information from address?
         if ($address->getHouseNumber() != '') {
@@ -435,10 +436,14 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
             if ($addressFields['houseNumber']) {
                 $addressFields['addition'] = $address->getStreetLine(3);
 
+                if (is_array($addressExtension)) {
+                    $addressExtension = $addressFactory;
+                }
+
                 $addressExtension->setStreetName($addressFields['streetName']);
                 $addressExtension->setHouseNumber($addressFields['houseNumber']);
                 $addressExtension->setHouseNumberAddition($addressFields['addition']);
-                //$address->setExtensionAttributes($addressExtension);
+                $address->setExtensionAttributes($addressExtension);
             }
             else {
                 // Get street, house number, etc from line 1
@@ -448,9 +453,15 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
                 $addressFields['houseNumber'] = $parts['house_number'];
                 $addressFields['addition'] = $parts['addition'];
 
-                $addressExtension->setStreetName($addressFields['street']);
-                $addressExtension->setHouseNumber($addressFields['houseNumber']);
-                $addressExtension->setHouseNumberAddition($addressFields['addition']);
+                //var_dump($addressFields);exit;
+                if (empty(array_filter($addressFields))) {
+                    return $addressFields;
+                }
+                $addressFactory = $this->addressExtensionFactory->create();
+
+                $addressFactory->setStreetName($addressFields['street']);
+                $addressFactory->setHouseNumber($addressFields['houseNumber']);
+                $addressFactory->setHouseNumberAddition($addressFields['addition']);
 
                 // Fixup region
                 if ($address->getRegion() != '' && !is_string($address->getRegion())) {
@@ -466,13 +477,6 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
         }
 
         return $addressFields;
-    }
-
-
-    protected function _getAddressFromCustomAttributes($address)
-    {
-        var_dump($address->getCustomAttributes);
-        exit;
     }
 
     /**
@@ -492,7 +496,6 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
 
             extract($this->_getAddressDataFromExtensionAttributes($extensionAttributes));
             extract($this->_getAddressFromAddresObject($address, $addressExtension));
-//            extract($this->_getAddressFromCustomAttributes($address));
 
             break;
         }
