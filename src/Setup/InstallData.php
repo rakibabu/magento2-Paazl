@@ -18,6 +18,10 @@ use Magento\Framework\Setup\ModuleDataSetupInterface;
 class InstallData implements InstallDataInterface
 {
     /**
+     * @var Magento\Framework\Serialize\SerializerInterface
+     */
+    protected $serializer;
+    /**
      * EAV setup factory
      *
      * @var PaazlSetupFactory
@@ -49,18 +53,26 @@ class InstallData implements InstallDataInterface
     /**
      * Init
      *
-     * @param PaazlSetupFactory $eavSetupFactory
+     * @param PaazlSetupFactory                                  $eavSetupFactory
+     * @param \Magento\Customer\Setup\CustomerSetupFactory       $customerSetupFactory
+     * @param \Magento\Eav\Model\Entity\Attribute\SetFactory     $attributeSetFactory
+     * @param \Magento\Eav\Api\AttributeRepositoryInterface      $attributeRepository
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param Magento\Framework\Serialize\SerializerInterface    $serializer
      */
     public function __construct(PaazlSetupFactory $eavSetupFactory,
-\Magento\Customer\Setup\CustomerSetupFactory $customerSetupFactory,
-\Magento\Eav\Model\Entity\Attribute\SetFactory $attributeSetFactory,
-\Magento\Eav\Api\AttributeRepositoryInterface $attributeRepository,
-\Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig)
+                                \Magento\Customer\Setup\CustomerSetupFactory $customerSetupFactory,
+                                \Magento\Eav\Model\Entity\Attribute\SetFactory $attributeSetFactory,
+                                \Magento\Eav\Api\AttributeRepositoryInterface $attributeRepository,
+                                \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+                                Magento\Framework\Serialize\SerializerInterface $serializer
+    )
     {
         $this->eavSetupFactory = $eavSetupFactory;
         $this->customerSetupFactory = $customerSetupFactory;
         $this->attributeSetFactory = $attributeSetFactory;
         $this->attributeRepository = $attributeRepository;
+        $this->serializer = $serializer;
         $this->scopeConfig = $scopeConfig;
     }
 
@@ -79,34 +91,34 @@ class InstallData implements InstallDataInterface
         // Create group
         $eavSetup->addAttributeGroup(\Magento\Catalog\Model\Product::ENTITY, 'Default', $groupName, 62);
 
-        foreach($eavSetup->getAttributeList() as $attributeInfo) {
+        foreach ($eavSetup->getAttributeList() as $attributeInfo) {
             // Create attributes
             $attribute = $eavSetup->addAttribute(
                 \Magento\Catalog\Model\Product::ENTITY,
                 $attributeInfo['attributeCode'],
                 [
-                    'group' => $groupName,
-                    'sort_order' => 40,
-                    'type' => 'varchar',
-                    'backend' => '',
-                    'frontend' => '',
-                    'label' => $attributeInfo['label'],
-                    'input' => 'text',
-                    'global' => \Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface::SCOPE_WEBSITE,
-                    'visible' => true,
-                    'required' => false,
-                    'user_defined' => false,
-                    'default' => '',
-                    'searchable' => false,
-                    'filterable' => false,
-                    'comparable' => false,
-                    'visible_on_front' => false,
+                    'group'                      => $groupName,
+                    'sort_order'                 => 40,
+                    'type'                       => 'varchar',
+                    'backend'                    => '',
+                    'frontend'                   => '',
+                    'label'                      => $attributeInfo['label'],
+                    'input'                      => 'text',
+                    'global'                     => \Magento\Eav\Model\Entity\Attribute\ScopedAttributeInterface::SCOPE_WEBSITE,
+                    'visible'                    => true,
+                    'required'                   => false,
+                    'user_defined'               => false,
+                    'default'                    => '',
+                    'searchable'                 => false,
+                    'filterable'                 => false,
+                    'comparable'                 => false,
+                    'visible_on_front'           => false,
                     'visible_in_advanced_search' => false,
-                    'used_in_product_listing' => false,
-                    'unique' => false,
-                    'is_used_in_grid' => false,
-                    'is_visible_in_grid' => false,
-                    'is_filterable_in_grid' => false,
+                    'used_in_product_listing'    => false,
+                    'unique'                     => false,
+                    'is_used_in_grid'            => false,
+                    'is_visible_in_grid'         => false,
+                    'is_filterable_in_grid'      => false,
                 ]
             );
         }
@@ -123,21 +135,21 @@ class InstallData implements InstallDataInterface
 
         if ($this->isAttributeAllowedForImport($customerEntity, 'street_name')) {
             $attribute = $customerSetup->getEavConfig()->getAttribute(
-                                $customerEntity,
-                                'street_name'
-                            )
-                                ->addData(
-                                    [
-                                        'attribute_set_id'   => $attributeSetId,
-                                        'attribute_group_id' => $attributeGroupId,
-                                        'used_in_forms'      => [
-                                            'adminhtml_customer_address',
-                                            'customer_address_edit',
-                                            'customer_register_address'
-                                        ],
-                                    ]
-                                );
-                            $attribute->save();
+                $customerEntity,
+                'street_name'
+            )
+                ->addData(
+                    [
+                        'attribute_set_id'   => $attributeSetId,
+                        'attribute_group_id' => $attributeGroupId,
+                        'used_in_forms'      => [
+                            'adminhtml_customer_address',
+                            'customer_address_edit',
+                            'customer_register_address',
+                        ],
+                    ]
+                );
+            $attribute->save();
             $customerSetup->addAttribute(
                 'customer_address',
                 'street_name',
@@ -149,7 +161,7 @@ class InstallData implements InstallDataInterface
                     'visible'          => true,
                     'visible_on_front' => true,
                     'user_defined'     => true,
-                    'position'       => 76,
+                    'position'         => 76,
                     'system'           => 0,
                 ]
             );
@@ -169,7 +181,7 @@ class InstallData implements InstallDataInterface
                         'used_in_forms'      => [
                             'adminhtml_customer_address',
                             'customer_address_edit',
-                            'customer_register_address'
+                            'customer_register_address',
                         ],
                     ]
                 );
@@ -185,7 +197,7 @@ class InstallData implements InstallDataInterface
                     'visible'          => true,
                     'visible_on_front' => true,
                     'user_defined'     => true,
-                    'position'       => 74,
+                    'position'         => 74,
                     'system'           => 0,
                 ]
             );
@@ -204,7 +216,7 @@ class InstallData implements InstallDataInterface
                         'used_in_forms'      => [
                             'adminhtml_customer_address',
                             'customer_address_edit',
-                            'customer_register_address'
+                            'customer_register_address',
                         ],
                     ]
                 );
@@ -220,7 +232,7 @@ class InstallData implements InstallDataInterface
                     'visible'          => true,
                     'visible_on_front' => true,
                     'user_defined'     => true,
-                    'position'       => 75,
+                    'position'         => 75,
                     'system'           => 0,
                 ]
             );
@@ -233,7 +245,7 @@ class InstallData implements InstallDataInterface
                     )
                     ->addData(
                         [
-                            'validate_rules'   => serialize([
+                            'validate_rules' => $this->serializer->serialize([
                                 'input_validation' => 'numeric',
                             ]),
                         ]
@@ -260,6 +272,7 @@ class InstallData implements InstallDataInterface
             if ($existingAllowed) {
                 return true;
             }
+
             return false;
         } catch (\Magento\Framework\Exception\NoSuchEntityException $e) {
             $allowed = true;
@@ -273,6 +286,7 @@ class InstallData implements InstallDataInterface
                 $allowed = true;
             }
         }
+
         return $allowed;
     }
 }

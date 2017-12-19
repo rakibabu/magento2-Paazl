@@ -396,6 +396,85 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
         return $this->_paazlData;
     }
 
+
+    protected function _getAddressDataFromExtensionAttributes($extensionAttributes)
+    {
+        $addressFields = [];
+
+        if ( ! is_null($extensionAttributes) && ! empty($extensionAttributes)) {
+            if (is_array($extensionAttributes)){
+                $addressFields['streetName'] = $extensionAttributes['street_name'];
+                $addressFields['houseNumber'] = $extensionAttributes['house_number'];
+
+                if (array_key_exists('house_number_addition', $extensionAttributes)) {
+                    $addressFields['addition'] = $extensionAttributes['house_number_addition'];
+                }
+            } else {
+                $addressFields['streetName'] = $extensionAttributes->getStreetName();
+                $addressFields['houseNumber'] = $extensionAttributes->getHouseNumber();
+                $addressFields['addition'] = $extensionAttributes->getHouseNumberAddition();
+            }
+        }
+
+        return $addressFields;
+    }
+
+    protected function _getAddressFromAddresObject($address, $addressExtension)
+    {
+        $addressFields = [];
+
+        // Try to get information from address?
+        if ($address->getHouseNumber() != '') {
+            $addressFields['streetName'] = $address->getStreetName();
+            $addressFields['$houseNumber'] = $address->getHouseNumber();
+            $addressFields['addition'] = $address->getHouseNumberAddition();
+        }
+        else {
+            $addressFields['streetName'] = $address->getStreetLine(1);
+            $addressFields['houseNumber'] = $address->getStreetLine(2);
+            if ($addressFields['houseNumber']) {
+                $addressFields['addition'] = $address->getStreetLine(3);
+
+                $addressExtension->setStreetName($addressFields['streetName']);
+                $addressExtension->setHouseNumber($addressFields['houseNumber']);
+                $addressExtension->setHouseNumberAddition($addressFields['addition']);
+                //$address->setExtensionAttributes($addressExtension);
+            }
+            else {
+                // Get street, house number, etc from line 1
+                $parts = $this->_addressHelper->getStreetParts($address->getStreet());
+
+                $addressFields['street'] = $parts['street'];
+                $addressFields['houseNumber'] = $parts['house_number'];
+                $addressFields['addition'] = $parts['addition'];
+
+                $addressExtension->setStreetName($addressFields['street']);
+                $addressExtension->setHouseNumber($addressFields['houseNumber']);
+                $addressExtension->setHouseNumberAddition($addressFields['addition']);
+
+                // Fixup region
+                if ($address->getRegion() != '' && !is_string($address->getRegion())) {
+                    $address->setRegion($address->getRegion()->getRegionId());
+                }
+
+                // @todo Should we fixup wrong format of street?
+                //$address->setStreet(implode("\n", array_filter($parts)));
+                //$address->setExtensionAttributes($addressExtension);
+            }
+
+            $address->save();
+        }
+
+        return $addressFields;
+    }
+
+
+    protected function _getAddressFromCustomAttributes($address)
+    {
+        var_dump($address->getCustomAttributes);
+        exit;
+    }
+
     /**
      * @param $request
      * @return array
@@ -411,46 +490,10 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
                 ? $extensionAttributes
                 : $this->addressExtensionFactory->create();
 
-            if ($address->getHouseNumber() != '') {
-                $streetName = $address->getStreetName();
-                $houseNumber = $address->getHouseNumber();
-                $addition = $address->getHouseNumberAddition();
-            }
-            else {
-                $streetName = $address->getStreetLine(1);
-                $houseNumber = $address->getStreetLine(2);
-                if ($houseNumber) {
-                    $addition = $address->getStreetLine(3);
+            extract($this->_getAddressDataFromExtensionAttributes($extensionAttributes));
+            extract($this->_getAddressFromAddresObject($address, $addressExtension));
+//            extract($this->_getAddressFromCustomAttributes($address));
 
-                    $addressExtension->setStreetName($streetName);
-                    $addressExtension->setHouseNumber($houseNumber);
-                    $addressExtension->setHouseNumberAddition($addition);
-                    //$address->setExtensionAttributes($addressExtension);
-                }
-                else {
-                    // Get street, house number, etc from line 1
-                    $parts = $this->_addressHelper->getStreetParts($address->getStreet());
-
-                    $street = $parts['street'];
-                    $houseNumber = $parts['house_number'];
-                    $addition = $parts['addition'];
-
-                    $addressExtension->setStreetName($street);
-                    $addressExtension->setHouseNumber($houseNumber);
-                    $addressExtension->setHouseNumberAddition($addition);
-
-                    // Fixup region
-                    if ($address->getRegion() != '' && !is_string($address->getRegion())) {
-                        $address->setRegion($address->getRegion()->getRegionId());
-                    }
-
-                    // @todo Should we fixup wrong format of street?
-                    //$address->setStreet(implode("\n", array_filter($parts)));
-                    //$address->setExtensionAttributes($addressExtension);
-                }
-
-                $address->save();
-            }
             break;
         }
 
