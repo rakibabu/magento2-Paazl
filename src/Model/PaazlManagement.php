@@ -409,7 +409,7 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
                 if (array_key_exists('house_number_addition', $extensionAttributes)) {
                     $addressFields['addition'] = $extensionAttributes['house_number_addition'];
                 }
-            } else {
+            } elseif( ! is_array($extensionAttributes)) {
                 $addressFields['streetName'] = $extensionAttributes->getStreetName();
                 $addressFields['houseNumber'] = $extensionAttributes->getHouseNumber();
                 $addressFields['addition'] = $extensionAttributes->getHouseNumberAddition();
