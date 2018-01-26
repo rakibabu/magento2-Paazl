@@ -58,14 +58,14 @@ class InstallData implements InstallDataInterface
      * @param \Magento\Eav\Model\Entity\Attribute\SetFactory     $attributeSetFactory
      * @param \Magento\Eav\Api\AttributeRepositoryInterface      $attributeRepository
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-     * @param Magento\Framework\Serialize\SerializerInterface    $serializer
+     * @param \Magento\Framework\Serialize\SerializerInterface    $serializer
      */
     public function __construct(PaazlSetupFactory $eavSetupFactory,
                                 \Magento\Customer\Setup\CustomerSetupFactory $customerSetupFactory,
                                 \Magento\Eav\Model\Entity\Attribute\SetFactory $attributeSetFactory,
                                 \Magento\Eav\Api\AttributeRepositoryInterface $attributeRepository,
                                 \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-                                Magento\Framework\Serialize\SerializerInterface $serializer
+                                \Magento\Framework\Serialize\SerializerInterface $serializer
     )
     {
         $this->eavSetupFactory = $eavSetupFactory;
