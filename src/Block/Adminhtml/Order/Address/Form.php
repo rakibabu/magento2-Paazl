@@ -140,9 +140,10 @@ class Form extends \Magento\Sales\Block\Adminhtml\Order\Address\Form
 
     /**
      * @param \Magento\Framework\Data\Form\Element\AbstractElement $countryElement
+     * @param null                                                 $storeId
      * @return void
      */
-    private function processCountryOptions(\Magento\Framework\Data\Form\Element\AbstractElement $countryElement)
+    protected function processCountryOptions(\Magento\Framework\Data\Form\Element\AbstractElement $countryElement, $storeId = NULL)
     {
         $storeId = $this->getBackendQuoteSession()->getStoreId();
         $options = $this->getCountriesCollection()
