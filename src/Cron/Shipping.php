@@ -143,7 +143,7 @@ class Shipping
             // In case of 1 order, ['orders']['order'] is the first result (object conversion)
             if (!isset($orders[0])) $orders = [$orders];
             foreach ($orders as $order) {
-                if (isset($order['status']) && strpos($order['status'], 'LABELS_CREATED') !== false) {
+                if (strpos($order['status'], 'LABELS_CREATED') !== false) {
                     $extOrderId = $order['orderReference'];
 
                     // Check if more than 1 label then get the first label

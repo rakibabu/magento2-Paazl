@@ -34,7 +34,7 @@ class CustomerAddressSaveObserver implements ObserverInterface
     {
         /** @var \Magento\Customer\Model\Address $address */
         $address = $observer->getEvent()->getCustomerAddress();
-        $houseNumberFull = '';
+        $street = [];
 
         // convert old address to new format
         $streetParts = $this->addressHelper->getMultiLineStreetParts($address->getStreet());
@@ -51,9 +51,9 @@ class CustomerAddressSaveObserver implements ObserverInterface
         if ($address->getHouseNumberAddition() != '') {
             $streetParts['addition'] = $address->getHouseNumberAddition();
         }
-        $houseNumberFull = $streetParts['house_number'];
+        $street[1] = $streetParts['house_number'];
         if ($streetParts['addition'] != '') {
-            $houseNumberFull .= ' ' . $streetParts['addition'];
+            $street[2] = $streetParts['addition'];
         }
 
         // @todo: check if already has values for house_number, etc
@@ -61,6 +61,8 @@ class CustomerAddressSaveObserver implements ObserverInterface
         $address->setHouseNumber($streetParts['house_number']);
         $address->setHouseNumberAddition($streetParts['addition']);
 
-        $address->setStreet($streetParts['street'] . " " . $houseNumberFull);
+        $street[0] = $streetParts['street'];
+        ksort($street);
+        $address->setStreet($street);
     }
 }

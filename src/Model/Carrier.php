@@ -212,6 +212,9 @@ class Carrier extends AbstractCarrierOnline implements \Magento\Shipping\Model\C
         $this->_paazlManagement->setPaazlData($this->_paazlData);
 
         $this->setRequest($request);
+        if(!$this->_paazlManagement->_getQuoteId()){
+            return false;
+        }
         $this->_getQuotes();
         $this->_updateFreeMethodQuote($request);
 
