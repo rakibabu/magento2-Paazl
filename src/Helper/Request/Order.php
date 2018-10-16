@@ -6,6 +6,7 @@
 namespace Paazl\Shipping\Helper\Request;
 
 use Magento\Framework\App\Helper\Context;
+use Magento\Framework\DataObject;
 
 class Order extends Generic
 {
@@ -98,8 +99,21 @@ class Order extends Generic
                     $productData['unitPrice'] = $item->getParentItem()->getData('price_incl_tax');
                 }
 
-                $productData = array_merge($productData, $storeData);
+                $customizedData = [];
+                $eventResponse = new DataObject([
+                    'product_data'    => $productData,
+                    'store_data'      => $storeData,
+                    'customized_data' => $customizedData,
+                ]);
+                $this->_eventManager->dispatch('paazl_shipping_request_order_item_before', [
+                    'request'        => $request,
+                    'product'        => $product,
+                    'item'           => $item,
+                    'event_response' => $eventResponse,
+                ]);
+                $customizedData = (array) $eventResponse->getData('customized_data');
 
+                $productData = array_merge($productData, $storeData, $customizedData);
                 array_walk($productData, array('\Paazl\Shipping\Helper\Request\Order', 'soapvar'));
 
                 $soapVar = new \SoapVar($productData,SOAP_ENC_OBJECT,NULL,NULL,'product',$namespace);
