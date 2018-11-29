@@ -145,15 +145,17 @@ class Shipping
             foreach ($orders as $order) {
                 if (!empty($order['status']) && strpos($order['status'], 'LABELS_CREATED') !== false) {
                     $extOrderId = $order['orderReference'];
+                    $trackingNr = '';
 
                     // Check if more than 1 label then get the first label
-                    if (!isset($order['label']['trackingNumber'])) {
-                        if(array_key_exists(0, $order['label'])){
-                            $order['label'] = $order['label'][0];
-                        }
+                    if (count($order['label']) > 1 && array_key_exists(0, $order['label'])) {
+                        $order['label'] = $order['label'][0];
                     }
 
-                    $trackingNr = $order['label']['trackingNumber'];
+                    if(isset($order['label']['trackingNumber'])) {
+                        $trackingNr = $order['label']['trackingNumber'];
+                    }
+
                     $shippingOption = $order['shippingOption'];
 
                     // get order and create a shipment
