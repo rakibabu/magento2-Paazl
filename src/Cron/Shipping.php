@@ -148,7 +148,9 @@ class Shipping
 
                     // Check if more than 1 label then get the first label
                     if (!isset($order['label']['trackingNumber'])) {
-                        $order['label'] = $order['label'][0];
+                        if(array_key_exists(0, $order['label'])){
+                            $order['label'] = $order['label'][0];
+                        }
                     }
 
                     $trackingNr = $order['label']['trackingNumber'];
