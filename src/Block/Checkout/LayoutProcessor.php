@@ -68,6 +68,8 @@ class LayoutProcessor implements LayoutProcessorInterface
         ['children']['payment']['children']['payments-list']['children'];
         if (is_array($paymentMethodRenders)) {
             foreach ($paymentMethodRenders as $name => $renderer) {
+                /* company */
+
                 if (isset($renderer['children']) && array_key_exists('form-fields', $renderer['children'])) {
                     $fields = $renderer['children']['form-fields']['children'];
                     $jsLayout['components']['checkout']['children']['steps']['children']['billing-step']
@@ -83,6 +85,7 @@ class LayoutProcessor implements LayoutProcessorInterface
                     ['children']['payment']['children']['payments-list']['children'][$name]['children']
                     ['form-fields']['children'];
                     if (isset($formFields['postcode']) && isset($formFields['street'])) {
+                        // Remove old street from checkout form
                         unset($jsLayout['components']['checkout']['children']['steps']['children']['billing-step']
                             ['children']['payment']['children']['payments-list']['children'][$name]['children']
                             ['form-fields']['children']['street']);

@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.3.7]
+### Improvements / Bug fixes
+- Previous release introduced an issue in which the order could not be created anymore.
+
+## [1.3.6]
+### Improvements / Bug fixes
+- Solve issue when an invoice was created based on an order that had an including a comma then the street would be empty.
+
+## [1.3.5]
+### Improvements / Bug fixes
+- Solve issue when a customer is logged in the address would not be saved when it including a comma. This address is now also correctly send to Paazl in the commit call.
+
+## [1.3.4]
+### Improvements / Bug fixes
+- Solve issue when RC versions were used. Due to several upgrade paths it could happen that extra address fields would not show in My Account page because of an incorrect setting to these attributes. This version will correct these attribute settings.
+- Solve issue where the state for an US address would not be committed correctly.
+- Solve issue when choosing for a different address in step 2 of the checkout would cause the checkout to stop.
+
+## [1.3.3]
+### Changed
+- Bugfix: extra address fields would not show in My Account page during a fresh install.
+- Bugfix: create order and reorder from backend now fill in address fields correctly.
+
 ## [1.3.2]
 ### Changed
 - Bugfix: Swagger error: invalid parameter type of Paazl Shipping Model Data Delivery

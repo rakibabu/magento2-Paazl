@@ -65,6 +65,7 @@ class Form extends \Magento\Sales\Block\Adminhtml\Order\Address\Form
 
         $addressForm = $this->_customerFormFactory->create('customer_address', 'adminhtml_customer_address');
         $attributes = $addressForm->getAttributes();
+        // Remove old street from Admin -> order view -> edit address
         unset($attributes['street']);
         $this->_addAttributesToForm($attributes, $fieldset);
 
@@ -139,9 +140,10 @@ class Form extends \Magento\Sales\Block\Adminhtml\Order\Address\Form
 
     /**
      * @param \Magento\Framework\Data\Form\Element\AbstractElement $countryElement
+     * @param null                                                 $storeId
      * @return void
      */
-    private function processCountryOptions(\Magento\Framework\Data\Form\Element\AbstractElement $countryElement)
+    protected function processCountryOptions(\Magento\Framework\Data\Form\Element\AbstractElement $countryElement, $storeId = NULL)
     {
         $storeId = $this->getBackendQuoteSession()->getStoreId();
         $options = $this->getCountriesCollection()

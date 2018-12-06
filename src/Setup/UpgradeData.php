@@ -11,9 +11,14 @@ use Paazl\Shipping\Setup\PaazlSetupFactory;
 use Magento\Framework\Setup\UpgradeDataInterface;
 use Magento\Framework\Setup\ModuleContextInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
+use Magento\Framework\Serialize\Serializer\Json;
 
 class UpgradeData implements UpgradeDataInterface
 {
+    /**
+     * @var \Magento\Eav\Model\ResourceModel\Entity\Attribute
+     */
+    protected $eavAttribute;
     /**
      * EAV setup factory
      *
@@ -42,19 +47,30 @@ class UpgradeData implements UpgradeDataInterface
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
      */
     protected $scopeConfig;
+
+    /**
+     * @var \Magento\Framework\Serialize\SerializerInterface
+     */
+    protected $serializer;
+
     /**
      * UpgradeData constructor.
      *
-     * @param \Paazl\Shipping\Setup\PaazlSetupFactory        $eavSetupFactory
-     * @param \Magento\Customer\Setup\CustomerSetupFactory   $customerSetupFactory
-     * @param \Magento\Eav\Model\Entity\Attribute\SetFactory $attributeSetFactory
+     * @param \Paazl\Shipping\Setup\PaazlSetupFactory            $eavSetupFactory
+     * @param \Magento\Customer\Setup\CustomerSetupFactory       $customerSetupFactory
+     * @param \Magento\Eav\Model\Entity\Attribute\SetFactory     $attributeSetFactory
+     * @param \Magento\Eav\Api\AttributeRepositoryInterface      $attributeRepository
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param Json                                               $serializer
      */
     public function __construct(
         PaazlSetupFactory $eavSetupFactory,
         \Magento\Customer\Setup\CustomerSetupFactory $customerSetupFactory,
         \Magento\Eav\Model\Entity\Attribute\SetFactory $attributeSetFactory,
         \Magento\Eav\Api\AttributeRepositoryInterface $attributeRepository,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        Json $serializer,
+        \Magento\Eav\Model\ResourceModel\Entity\Attribute $eavAttribute
     )
     {
         $this->eavSetupFactory = $eavSetupFactory;
@@ -62,8 +78,9 @@ class UpgradeData implements UpgradeDataInterface
         $this->attributeSetFactory = $attributeSetFactory;
         $this->attributeRepository = $attributeRepository;
         $this->scopeConfig = $scopeConfig;
+        $this->serializer = $serializer;
+        $this->eavAttribute = $eavAttribute;
     }
-
 
     public function upgrade(ModuleDataSetupInterface $setup, ModuleContextInterface $context)
     {
@@ -89,21 +106,21 @@ class UpgradeData implements UpgradeDataInterface
 
             if ($this->isAttributeAllowedForImport($customerEntity, 'street_name')) {
                 $attribute = $customerSetup->getEavConfig()->getAttribute(
-                                    $customerEntity,
-                                    'street_name'
-                                )
-                                    ->addData(
-                                        [
-                                            'attribute_set_id'   => $attributeSetId,
-                                            'attribute_group_id' => $attributeGroupId,
-                                            'used_in_forms'      => [
-                                                'adminhtml_customer_address',
-                                                'customer_address_edit',
-                                                'customer_register_address'
-                                            ],
-                                        ]
-                                    );
-                                $attribute->save();
+                    $customerEntity,
+                    'street_name'
+                )
+                    ->addData(
+                        [
+                            'attribute_set_id'   => $attributeSetId,
+                            'attribute_group_id' => $attributeGroupId,
+                            'used_in_forms'      => [
+                                'adminhtml_customer_address',
+                                'customer_address_edit',
+                                'customer_register_address'
+                            ],
+                        ]
+                    );
+                $attribute->save();
                 $customerSetup->addAttribute(
                     'customer_address',
                     'street_name',
@@ -114,7 +131,7 @@ class UpgradeData implements UpgradeDataInterface
                         'required'         => true,
                         'visible'          => true,
                         'visible_on_front' => true,
-                        'user_defined'     => false,
+                        'user_defined'     => true,
                         'position'       => 76,
                         'system'           => 0,
                     ]
@@ -150,7 +167,7 @@ class UpgradeData implements UpgradeDataInterface
                         'required'         => true,
                         'visible'          => true,
                         'visible_on_front' => true,
-                        'user_defined'     => false,
+                        'user_defined'     => true,
                         'position'       => 74,
                         'system'           => 0,
                     ]
@@ -185,7 +202,7 @@ class UpgradeData implements UpgradeDataInterface
                         'required'         => false,
                         'visible'          => true,
                         'visible_on_front' => true,
-                        'user_defined'     => false,
+                        'user_defined'     => true,
                         'position'       => 75,
                         'system'           => 0,
                     ]
@@ -207,6 +224,43 @@ class UpgradeData implements UpgradeDataInterface
                     );
                 $attribute->save();
             }
+        }
+
+        if (version_compare($context->getVersion(), '1.3.4') < 0) {
+            $customerSetup = $this->customerSetupFactory->create(['setup' => $setup]);
+            $customerEntity = $customerSetup->getEavConfig()->getEntityType(
+                'customer_address'
+            );
+
+            foreach (['street_name', 'house_number', 'house_number_addition'] as $field) {
+                if ($this->isAttributeAllowedForImport($customerEntity, $field, true)) {
+                    $attribute = $customerSetup->getEavConfig()
+                        ->getAttribute(
+                            'customer_address',
+                            $field
+                        )
+                        ->addData(
+                            [
+                                'is_user_defined'   => true,
+                            ]
+                        );
+                    $attribute->save();
+                }
+            }
+        }
+
+        if (version_compare($context->getVersion(), '1.3.8', '<')) {
+            // create Customer attributes
+            $customerSetup = $this->customerSetupFactory->create(['setup' => $setup]);
+
+            $customerSetup->updateAttribute(
+                'customer_address',
+                $this->eavAttribute->getIdByCode('customer_address', 'house_number'),
+                'validate_rules',
+                $this->serializer->serialize([
+                    'input_validation' => 'numeric',
+                ])
+            );
         }
 
         $setup->endSetup();

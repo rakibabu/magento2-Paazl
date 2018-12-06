@@ -1,3 +1,4 @@
+
 <?php
 /**
  * Copyright (c) 2017 H&O E-commerce specialisten B.V. (http://www.h-o.nl/)
@@ -143,12 +144,16 @@ class Shipping
             // In case of 1 order, ['orders']['order'] is the first result (object conversion)
             if (!isset($orders[0])) $orders = [$orders];
             foreach ($orders as $order) {
-                if (strpos($order['status'], 'LABELS_CREATED') !== false) {
+                if (isset($order['status']) && strpos($order['status'], 'LABELS_CREATED') !== false) {
                     $extOrderId = $order['orderReference'];
 
                     // Check if more than 1 label then get the first label
                     if (!isset($order['label']['trackingNumber'])) {
-                        $order['label'] = $order['label'][0];
+                        if (isset($order['label'][0]) {
+                            $order['label'] = $order['label'][0];
+                        } else {
+                            $order['label'] = '';
+                        }
                     }
 
                     $trackingNr = $order['label']['trackingNumber'];
