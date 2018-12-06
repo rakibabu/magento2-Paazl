@@ -149,7 +149,7 @@ class Shipping
 
                     // Check if more than 1 label then get the first label
                     if (!isset($order['label']['trackingNumber'])) {
-                        if (isset($order['label'][0]) {
+                        if (isset($order['label'][0])) {
                             $order['label'] = $order['label'][0];
                         } else {
                             $order['label'] = '';
