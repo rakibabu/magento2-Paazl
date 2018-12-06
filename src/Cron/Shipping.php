@@ -155,8 +155,15 @@ class Shipping
                         }
                     }
 
-                    $trackingNr = $order['label']['trackingNumber'];
-                    $shippingOption = $order['shippingOption'];
+                    $trackingNr = '';
+                    if (isset($order['label']['trackingNumber'])) {
+                        $trackingNr = $order['label']['trackingNumber'];
+                    }
+
+                    $shippingOption = '';
+                    if (isset($order['shippingOption']) {
+                        $shippingOption = $order['shippingOption'];
+                    }
 
                     // get order and create a shipment
                     $filterData = [
