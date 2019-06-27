@@ -375,6 +375,7 @@ class PaazlManagement implements \Paazl\Shipping\Api\PaazlManagementInterface
                     'shippingOption' => null,
                     'deliveryDateRange' => null,
                     'deliveryEstimate' => true,
+                    'products' => $products
                 ]
             ];
             $shippingOptionRequest = $this->_requestBuilder->build('PaazlShippingOptionRequest', $data);

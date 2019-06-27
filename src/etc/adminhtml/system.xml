@@ -260,6 +260,22 @@
                 <field id="sort_order" translate="label" type="text" sortOrder="300" showInDefault="1" showInWebsite="1" showInStore="0">
                     <label>Sort Order</label>
                 </field>
+                <field id="show_evening" translate="label" type="select" sortOrder="310" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
+                    <label>Show evening delivery</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="same_day" translate="label" type="text" sortOrder="320" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Same day method</label>
+                    <depends>
+                        <field id="show_evening">1</field>
+                    </depends>
+                </field>
+                <field id="next_day" translate="label" type="text" sortOrder="320" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <label>Next day method</label>
+                    <depends>
+                        <field id="show_evening">1</field>
+                    </depends>
+                </field>
             </group>
         </section>
     </system>

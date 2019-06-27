@@ -50,7 +50,7 @@ class SalesOrderAddressSaveObserver implements ObserverInterface
     {
         /** @var \Magento\Sales\Model\Order\Address $address */
         $address = $observer->getEvent()->getAddress();
-        $houseNumberFull = '';
+        $street = [];
 
         // convert old address to new format
         $streetParts = $this->addressHelper->getMultiLineStreetParts($address->getStreet());
@@ -67,18 +67,25 @@ class SalesOrderAddressSaveObserver implements ObserverInterface
         if ($address->getHouseNumberAddition() != '') {
             $streetParts['addition'] = $address->getHouseNumberAddition();
         }
-        $houseNumberFull = $streetParts['house_number'];
+        $street[1] = $streetParts['house_number'];
         if ($streetParts['addition'] != '') {
-            $houseNumberFull .= ' ' . $streetParts['addition'];
+            $street[2] = $streetParts['addition'];
         }
 
         // Check if this is a saved address, then use those values. $streetParts could be incorrect when the address has a comma in it.
         if ($address->hasData('customer_address_id') && is_numeric($address->getCustomerAddressId())) {
             $customerAddress = $this->addressRepository->getById($address->getCustomerAddressId());
+            if(!empty($customerAddress->getCustomAttribute('street_name'))) {
+                $streetParts['street'] = $customerAddress->getCustomAttribute('street_name')->getValue();
+            }
 
-            $streetParts['street'] = $customerAddress->getCustomAttribute('street_name')->getValue();
-            $streetParts['house_number'] = $customerAddress->getCustomAttribute('house_number')->getValue();
-            $streetParts['addition'] = $customerAddress->getCustomAttribute('house_number_addition')->getValue();
+            if(!empty($customerAddress->getCustomAttribute('house_number'))) {
+                $streetParts['house_number'] = $customerAddress->getCustomAttribute('house_number')->getValue();
+            }
+
+            if(!empty($customerAddress->getCustomAttribute('addition'))) {
+                $streetParts['addition'] = $customerAddress->getCustomAttribute('addition')->getValue();
+            }
         }
         // Load address directly. Address from observer event misses data.
         else {
@@ -95,6 +102,8 @@ class SalesOrderAddressSaveObserver implements ObserverInterface
         $address->setHouseNumber($streetParts['house_number']);
         $address->setHouseNumberAddition($streetParts['addition']);
 
-        $address->setStreet($streetParts['street'] . " " . $houseNumberFull);
+        $street[0] = $streetParts['street'];
+        ksort($street);
+        $address->setStreet($street);
     }
 }

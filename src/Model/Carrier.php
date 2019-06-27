@@ -14,6 +14,7 @@ use Magento\Shipping\Model\Rate\Result;
 use Magento\Shipping\Model\Simplexml\Element;
 use Magento\Framework\Xml\Security;
 use Paazl\Shipping\Model\Api\Request as PaazlRequest;
+use Paazl\Shipping\Helper\Log as LogHelper;
 
 /**
  * Paazl shipping
@@ -84,6 +85,11 @@ class Carrier extends AbstractCarrierOnline implements \Magento\Shipping\Model\C
     protected $storeManager;
 
     /**
+     * @var \Magento\Store\Model\StoreManagerInterface
+     */
+    protected $messageManager;
+
+    /**
      * @var \Magento\Framework\Registry
      */
     protected $registry;
@@ -94,6 +100,9 @@ class Carrier extends AbstractCarrierOnline implements \Magento\Shipping\Model\C
      * @var array
      */
     protected $_quotesSharedCache;
+
+    /** @var LogHelper */
+    protected $log;
 
     /**
      * Carrier constructor.
@@ -148,6 +157,8 @@ class Carrier extends AbstractCarrierOnline implements \Magento\Shipping\Model\C
         \Magento\Quote\Model\QuoteFactory $quoteFactory,
         \Magento\Store\Model\StoreManagerInterface $storeManager,
         \Magento\Framework\Registry $registry,
+        \Magento\Framework\Message\ManagerInterface $messageManager,
+        LogHelper $log,
         array $data = []
     ) {
         $this->_requestBuilder = $requestBuilder;
@@ -158,7 +169,9 @@ class Carrier extends AbstractCarrierOnline implements \Magento\Shipping\Model\C
         $this->shippingMethodExtensionFactory = $shippingMethodExtensionFactory;
         $this->quoteFactory = $quoteFactory;
         $this->storeManager = $storeManager;
+        $this->messageManager = $messageManager;
         $this->registry = $registry;
+        $this->log = $log;
         parent::__construct(
             $scopeConfig,
             $rateErrorFactory,
@@ -193,7 +206,6 @@ class Carrier extends AbstractCarrierOnline implements \Magento\Shipping\Model\C
         if (!$this->canCollectRates()) {
             return $this->getErrorMessage();
         }
-
         $paazlData = $this->registry->registry('paazlData');
 
         $this->registry->register('paazl_current_store', $request->getStoreId(), true);
@@ -212,7 +224,17 @@ class Carrier extends AbstractCarrierOnline implements \Magento\Shipping\Model\C
         $this->_paazlManagement->setPaazlData($this->_paazlData);
 
         $this->setRequest($request);
-        $this->_getQuotes();
+        if(!$this->_paazlManagement->_getQuoteId()){
+            return false;
+        }
+
+        try{
+            $this->_getQuotes();
+        } catch (\Exception $e) {
+            $this->messageManager->addError($e->getMessage());
+            $this->log->write($e->getMessage());
+            return false;
+        }
         $this->_updateFreeMethodQuote($request);
 
         $this->registry->unregister('paazlData');

@@ -136,8 +136,18 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
 
                 // @todo: for Shipping + Delivery
                 $allMethods = parent::getAllowedMethods();
+
+                $isEvening = false;
+
+                if (isset($allowedMethods['delivery_evening'])){
+                    if($allowedMethods['delivery_evening']['method'] == $methodChosen){
+                        $isEvening = true;
+                    }
+                }
+
                 foreach ($allowedMethods as $method => $methodData) {
-                    if ($deliveryType == $method) {
+                    if (strpos($method, $deliveryType) !== false
+                        && (($isEvening && $method == 'delivery_evening') || (!$isEvening && $method != 'delivery_evening'))) {
                         if (isset($allMethods[$methodChosen])) {
                             $method = $methodChosen;
                             $methodData = $allMethods[$methodChosen];
@@ -161,13 +171,19 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
                             }
                         }
 
-                        $methodPrice = (in_array($method, $this->getCode('free_methods')))
+                        $methodPrice = (in_array(
+                            $method,
+                            $this->getCode('free_methods')
+                        ))
                             ? 0
                             : $data['delivery']['rate'];
 
                         if ($freeShippingThreshold > 0) {
                             if ($this->_request->getPackageValueWithDiscount() > $freeShippingThreshold) {
-                                if (in_array($method, $this->getCode('free_shipping_allowed_methods'))) {
+                                if (in_array(
+                                    $method,
+                                    $this->getCode('free_methods')
+                                )) {
                                     $methodPrice = 0;
                                 }
                             }
@@ -181,8 +197,7 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
                         if (isset($methodData['servicePoint'])) {
                             $rate->setIdentifier($data['delivery']['servicePoint']['code']);
                             $rate->setPaazlOption($data['delivery']['option']);
-                        }
-                        else {
+                        } else {
                             if (isset($data['delivery']['preferredDeliveryDate'])) {
                                 $rate->setPaazlPreferredDate($data['delivery']['preferredDeliveryDate']);
                             }
@@ -194,22 +209,26 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
                         $rate->setCarrierTitle('');
                         $rate->setCost($methodPrice);
                         $rate->setPrice($methodPrice);
-
                         $this->_paazlData['delivery'][$method] = $data['delivery'];
                         $this->_paazlManagement->setPaazlData($this->_paazlData);
 
                         $this->_result->append($rate);
-                    }
-                    else {
+                    } else {
                         $title = $methodData['description'];
 
-                        $methodPrice = (in_array($method, $this->getCode('free_methods')))
+                        $methodPrice = (in_array(
+                            $method,
+                            $this->getCode('free_methods')
+                        ))
                             ? 0
                             : $methodData['price'];
 
                         if ($freeShippingThreshold > 0) {
                             if ($this->_request->getPackageValueWithDiscount() > $freeShippingThreshold) {
-                                if (in_array($method, $this->getCode('free_shipping_allowed_methods'))) {
+                                if (in_array(
+                                    $method,
+                                    $this->getCode('free_methods')
+                                )) {
                                     $methodPrice = 0;
                                 }
                             }
@@ -221,14 +240,15 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
                                 'servicePoint' => $methodData['servicePoint'],
                             ];
                         }
+                        $rate = $this->_rateMethodFactory->create();
 
                         if (isset($methodData['deliveryDates']) && isset($methodData['deliveryDates'][0]['deliveryDate'])) {
                             $this->_paazlData['delivery'][$methodData['method']] = [
                                 'preferredDeliveryDate' => $methodData['deliveryDates'][0]['deliveryDate'],
                             ];
+                            $rate->setPaazlPreferredDate($methodData['deliveryDates'][0]['deliveryDate']);
                         }
 
-                        $rate = $this->_rateMethodFactory->create();
                         $rate->setCarrier(static::CODE);
                         $rate->setCarrierTitle($methodData['title']);
                         //$rate->setCarrierTitle(static::CODE);
@@ -239,11 +259,9 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
                         $rate->setPrice($methodPrice);
 
                         $this->_paazlManagement->setPaazlData($this->_paazlData);
-
                         $this->_result->append($rate);
                     }
                 }
-
                 return $this->_result;
             }
         }
@@ -318,6 +336,10 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
     public function getAllowedMethods()
     {
         $methods = parent::getAllowedMethods();
+        $currentStoreId = $this->registry->registry('paazl_current_store');
+        $isShowEvening = $this->_scopeConfig->getValue('carriers/paazlp/show_evening', \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $currentStoreId);
+        $sameDayMethod = $this->_scopeConfig->getValue('carriers/paazlp/same_day', \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $currentStoreId);
+        $nextDayMethod = $this->_scopeConfig->getValue('carriers/paazlp/next_day', \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $currentStoreId);
 
         if (empty($methods)) {
             return [];
@@ -325,7 +347,6 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
 
         // Sort by price
         uasort($methods, ["\Paazl\Shipping\Model\Carrier\Perfect", "cmp"]);
-
         $key = key($methods);
 
         if ($key == 'SERVICE_POINT' && next($methods) !== false) {
@@ -333,14 +354,27 @@ class Perfect extends \Paazl\Shipping\Model\Carrier
             $key = key($methods);
         }
 
+        if($isShowEvening){
+            if($key == $sameDayMethod && next($methods) !== false && isset($methods[$sameDayMethod])) {
+                next($methods);
+                $key = key($methods);
+            }elseif($key == $sameDayMethod && next($methods) !== false && isset($methods[$nextDayMethod])) {
+                next($methods);
+                $key = key($methods);
+            }
+        }
+
         $data = [
             'delivery' => $methods[$key],
         ];
 
+        if($isShowEvening && (isset($methods[$sameDayMethod]) || isset($methods[$nextDayMethod]))) {
+            $data['delivery_evening'] = isset($methods[$sameDayMethod]) ? $methods[$sameDayMethod] : $methods[$nextDayMethod];
+        }
+
         if (isset($methods['SERVICE_POINT'])) {
             $data['servicepoint'] = $methods['SERVICE_POINT'];
         }
-
         return $data;
     }
 

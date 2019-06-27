@@ -144,19 +144,19 @@ class Shipping
             // In case of 1 order, ['orders']['order'] is the first result (object conversion)
             if (!isset($orders[0])) $orders = [$orders];
             foreach ($orders as $order) {
-                if (isset($order['status']) && strpos($order['status'], 'LABELS_CREATED') !== false) {
+                if (isset($order['status']) && !empty($order['status']) && strpos($order['status'], 'LABELS_CREATED') !== false) {
                     $extOrderId = $order['orderReference'];
+                    $trackingNr = '';
 
                     // Check if more than 1 label then get the first label
-                    if (!isset($order['label']['trackingNumber'])) {
-                        if (isset($order['label'][0])) {
-                            $order['label'] = $order['label'][0];
-                        } else {
-                            $order['label'] = '';
-                        }
+                    if (count($order['label']) > 1 && array_key_exists(0, $order['label'])) {
+                        $order['label'] = $order['label'][0];
                     }
 
-                    $trackingNr = $order['label']['trackingNumber'];
+                    if(isset($order['label']['trackingNumber'])) {
+                        $trackingNr = $order['label']['trackingNumber'];
+                    }
+
                     $shippingOption = $order['shippingOption'];
 
                     // get order and create a shipment
