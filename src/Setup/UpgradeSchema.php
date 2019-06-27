@@ -41,7 +41,7 @@ class UpgradeSchema implements UpgradeSchemaInterface
                 'response_time',
                 [
                     'type' => Table::TYPE_FLOAT,
-                    'length' => 255,
+                    'length' => '10,6',
                     'nullable' => true,
                     'comment' => 'Response time'
                 ]
